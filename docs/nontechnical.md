@@ -14,13 +14,16 @@ You don’t need any technical setup once it’s configured.
 ## How It Works
 
 | Step | What Happens | Example |
-|------|-------------|---------|
-| 1️⃣ | Customer submits a form. | “Hi, can you help automate our sales report generation?” |
-| 2️⃣ | Response is saved to Google Sheets. | A new row appears with name, email, company, and message. |
-| 3️⃣ | n8n detects the new entry. | The workflow fetches the latest row. |
-| 4️⃣ | AI analyzes the details. | Assigns **High priority** and writes a personalized reply. |
-| 5️⃣ | Gmail sends the message automatically. | The customer receives a tailored email reply. |
-| 6️⃣ | Discord posts a summary. | The team sees a quick notification in `#ai-leads`. |
+|------|---------------|----------|
+| 1️⃣ | **Customer submits a form.** | “Hi, can you help automate our sales report generation?” |
+| 2️⃣ | **Response is saved to Google Sheets.** | A new row appears with the customer’s name, email, company, and message. |
+| 3️⃣ | **n8n detects the new entry.** | The workflow automatically identifies rows not marked as “processed.” |
+| 4️⃣ | **AI analyzes the details.** | It classifies the lead as **High Priority** and generates a professional, personalized reply email. |
+| 5️⃣ | **Gmail sends the message automatically.** | The customer instantly receives a tailored response crafted by the AI. |
+| 6️⃣ | **Discord posts a summary.** | The internal team sees a concise notification in `#ai-leads`, including the lead’s name, company, and summary. |
+| 7️⃣ | **Lead is marked as processed.** | The workflow updates the Google Sheet (`processed = yes`) so the same entry isn’t handled twice. |
+
+
 
 ---
 
