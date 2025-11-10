@@ -71,42 +71,46 @@ Discord WebHook Message
 ```
 ai-lead-qualifier-n8n/
 ├─ workflow/
-│  └─ My workflow.json
+│  └─ ai-lead-qualifier-n8n.json
 ├─ docs/
 │  ├─ technical.md
-│  ├─ user-guide.md
+│  ├─ nontechnical.md
 └─ README.md
 ```
-🚀 Setup Steps
+## 🚀 Setup Steps
 
-Import Workflow
-In n8n → Workflows → Import from File → select ai-lead-qualifier-n8n.json.
+### 1. Import Workflow
+In **n8n**, go to **Workflows → Import from File** → select `ai-lead-qualifier-n8n.json`.
 
-Connect Credentials
-Link your Google, Gmail, OpenAI, and Discord credentials.
+### 2. Connect Credentials
+Link your credentials for:
+- **Google Sheets**
+- **Gmail**
+- **OpenAI**
+- **Discord Webhook**
 
-Update Sheet Reference
-Point the Google Sheets node to your active sheet.
+### 3. Update Sheet Reference
+Point the **Google Sheets** node to your active sheet containing the lead data.
 
-Run Workflow
-Execute once manually to verify end-to-end flow.
+### 4. Run Workflow
+Execute the workflow manually once to verify the end-to-end automation flow.
 
-Optional Automation
-Add a Cron or Google Sheets Trigger for continuous execution on new rows.
+### 5. Optional Automation
+Add a **Cron** or **Google Sheets Trigger** node to automatically execute the workflow when new rows are added.
 
+---
 
+## ⚡ Scalability Ideas
 
-⚡ Scalability Ideas
+- 🔁 Replace manual **Get Rows** with a **Trigger Node** for real-time automation.  
+- 🚨 Add **IF nodes** for `priority === "High"` to alert the sales team.  
+- 🗃️ Store results in a **database** for long-term analytics and reporting.  
+- 🤝 Integrate with **CRM tools** such as HubSpot or Notion for deeper workflow automation.
 
-Replace manual Get Rows with a Trigger Node for real-time automation.
+---
 
-Add IF nodes for priority === "High" to alert the sales team.
+**Workflow Version:** v1.0 – *AI Lead Qualifier (n8n)*  
+**Maintainer:** Joshua Patrick G. Chiu  
+**Email:** joshuapatrickchiu76@gmail.com
 
-Store results in a database for long-term analytics.
-
-Integrate with CRM tools such as HubSpot or Notion for deeper workflow automation.
-
-Workflow Version: v1.0 – AI Lead Qualifier (n8n)
-Maintainer: Joshua Patrick G. Chiu
-Email: joshuapatrickchiu76@gmail.com
 
