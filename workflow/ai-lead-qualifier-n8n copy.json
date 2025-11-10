@@ -1,0 +1,348 @@
+{
+  "name": "ai-lead-qualifier-n8n copy",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w",
+          "mode": "list",
+          "cachedResultName": "AI Lead Intake2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -272,
+        -192
+      ],
+      "id": "a7e5b93c-1ebb-4556-b608-14e94487a0b5",
+      "name": "Google Sheets - Get Lead",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dZdx4TOuSWuj7LRe",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1437080615651377322/_O8QLXr2255iq4IchwH7pz0ijZJOYQQUvyFKEvLIqylU571H-G2P4KFHtQKBeRABcKN-",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=🧠 New {{$json[\"priority\"]}} priority lead\n👤 {{$json[\"name\"]}} ({{$json[\"email\"]}})\n🏢 {{$json[\"company\"]}}\n📝 {{$json[\"summary\"]}}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        704,
+        -448
+      ],
+      "id": "e1950204-f4f1-4a8d-9e61-342db439b650",
+      "name": "Discord - Notify Lead"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an assistant helping qualify inbound leads for an AI automation agency.\n\nYou will receive lead details from a form. Analyze them and respond in STRICT JSON only.\nNo markdown, no backticks, no code fences, no explanations outside the JSON.\n\nLead details:\n- Name: {{$json[\"name\"]}}\n- Email: {{$json[\"email\"]}}\n- Company: {{$json[\"company\"]}}\n- Budget: {{$json[\"budget\"]}}\n- Use case: {{$json[\"use_case\"]}}\n- Message: {{$json[\"message\"]}}\n- Row number: {{$json[\"rowNumber\"] || $json[\"row_number\"]}}\n\nClassify priority using these rules:\n- \"High\" if the lead has a clear use case, relevant to AI/automation, and a defined/serious budget.\n- \"Medium\" if the lead seems valid but scope or budget is unclear.\n- \"Low\" if the request is vague, not relevant, or likely spam.\n\nReturn JSON in EXACTLY this shape (fill all fields):\n\n{\n  \"name\": \"{{$json[\"name\"]}}\",\n  \"email\": \"{{$json[\"email\"]}}\",\n  \"company\": \"{{$json[\"company\"]}}\",\n  \"rowNumber\": {{$json[\"rowNumber\"] || $json[\"row_number\"] || 0}},\n  \"priority\": \"High\" | \"Medium\" | \"Low\",\n  \"summary\": \"Short 1-2 sentence summary of what they need\",\n  \"personalized_email\": \"Short, warm, professional reply that restates their need, explains how we can help, and invites them to reply or book a call.\"\n}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -192
+      ],
+      "id": "6bcef508-80be-40a7-9323-7b337402af0c",
+      "name": "OpenAI - Analyze Lead",
+      "credentials": {
+        "openAiApi": {
+          "id": "YcfLoXgoj2Voauth",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$node[\"Google Sheets - Get Lead\"].json[\"email\"]}}",
+        "subject": "Thank you for reaching out to us",
+        "message": "={{$json[\"personalized_email\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        704,
+        -240
+      ],
+      "id": "aef5cecc-0dac-4ea5-85cd-878ea22cbd87",
+      "name": "Gmail - Send Reply",
+      "webhookId": "3d27eba2-bd34-4882-90f3-25aab5a2d079",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aFzposG5GKYkAEeS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This Code node receives all rows from Google Sheets as `items`.\n// We only want rows that have NOT been processed yet.\n// A row is \"unprocessed\" if the `processed` column is empty or not \"yes\".\n\nconst unprocessed = items.filter(item => {\n  const status = (item.json.processed || '').toString().trim().toLowerCase();\n  return status !== 'yes';\n});\n\n// If nothing to process, stop the workflow here.\nif (unprocessed.length === 0) {\n  return [];\n}\n\n// Return only unprocessed rows for further processing.\nreturn unprocessed;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -192
+      ],
+      "id": "d958e85a-130b-4660-8424-8fd2467cd81e",
+      "name": "Filter Unprocessed Leads"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This Code node parses the JSON returned by OpenAI for each item.\n// It expects OpenAI to return a complete object with:\n// name, email, company, rowNumber, priority, summary, personalized_email\n\nconst results = [];\n\nfor (const item of items) {\n  const data = item.json;\n\n  // Raw model output (update this path if your OpenAI node shape differs)\n  let raw =\n    data.output?.[0]?.content?.[0]?.text || // common for newer OpenAI nodes in n8n\n    data.text ||\n    data.result ||\n    '';\n\n  let parsed;\n\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    // Fallback if parsing fails\n    parsed = {\n      name: data.name,\n      email: data.email,\n      company: data.company,\n      rowNumber: data.rowNumber ?? data.row_number ?? 0,\n      priority: 'Medium',\n      summary: 'Lead received, but AI response could not be parsed correctly.',\n      personalized_email:\n        'Hi, thank you for reaching out. Our team will review your message and follow up shortly.'\n    };\n  }\n\n  // Ensure critical fields exist\n  results.push({\n    json: {\n      name: parsed.name || data.name,\n      email: parsed.email || data.email,\n      company: parsed.company || data.company,\n      rowNumber: parsed.rowNumber ?? data.rowNumber ?? data.row_number ?? 0,\n      priority: parsed.priority || 'Medium',\n      summary: parsed.summary || '',\n      personalized_email: parsed.personalized_email || ''\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -192
+      ],
+      "id": "50156bbe-22e5-4bf4-abd7-ea410eb35439",
+      "name": "Parse OpenAI Response"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w",
+          "mode": "list",
+          "cachedResultName": "AI Lead Intake2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10Cab_3DMUCHzuQcGQuqXZ6bYf-i6nhuF9hu8BElC76w/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{$json[\"rowNumber\"]}}",
+            "processed": "yes"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "processed",
+              "displayName": "processed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "use_case",
+              "displayName": "use_case",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        -48
+      ],
+      "id": "8e5fb9c2-8699-4184-bce5-5ed2cf02458e",
+      "name": "Mark Lead as processed",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dZdx4TOuSWuj7LRe",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets - Get Lead": {
+      "main": [
+        [
+          {
+            "node": "Filter Unprocessed Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord - Notify Lead": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI - Analyze Lead": {
+      "main": [
+        [
+          {
+            "node": "Parse OpenAI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unprocessed Leads": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Analyze Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OpenAI Response": {
+      "main": [
+        [
+          {
+            "node": "Discord - Notify Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mark Lead as processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8aab7704-a979-4fdf-9fd2-a9863bec4806",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cc4393bbf3edecc5392820f0ca14b0916f6cca07fd2cc1df1a757569c1986f7c"
+  },
+  "id": "QwP9LtiiqgZ0d0As",
+  "tags": []
+}
