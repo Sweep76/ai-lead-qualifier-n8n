@@ -1,0 +1,188 @@
+{
+  "name": "ai-lead-qualifier-n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1NwMmi3CwLf6hMtKbeWuq526kVX--AtmLCnFZz27KQGQ",
+          "mode": "list",
+          "cachedResultName": "AI Lead Intake",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwMmi3CwLf6hMtKbeWuq526kVX--AtmLCnFZz27KQGQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwMmi3CwLf6hMtKbeWuq526kVX--AtmLCnFZz27KQGQ/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        -192
+      ],
+      "id": "29829355-16fd-42e1-962a-4bc039c3a093",
+      "name": "Google Sheets - Get Lead",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dZdx4TOuSWuj7LRe",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1437080615651377322/_O8QLXr2255iq4IchwH7pz0ijZJOYQQUvyFKEvLIqylU571H-G2P4KFHtQKBeRABcKN-",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=🧠 New {{$json[\"priority\"]}} priority lead 👤 {{$node[\"Google Sheets - Get Lead\"].json[\"name\"]}} ({{$node[\"Google Sheets - Get Lead\"].json[\"email\"]}}) 🏢 {{$node[\"Google Sheets - Get Lead\"].json[\"company\"]}} 📝 {{$json[\"summary\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        672,
+        -288
+      ],
+      "id": "362af992-221f-4402-b70d-6a748244c81d",
+      "name": "Discord - Notify Lead"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an assistant helping qualify inbound leads for an AI automation agency.\n\nYou will receive lead details from a form. Analyze them and respond in STRICT JSON only. No markdown, no explanations.\n\nFor each item, use the first (or current) lead from the input.\n\nLead details:\n- Name: {{$json[\"name\"]}}\n- Company: {{$json[\"company\"]}}\n- Budget: {{$json[\"budget\"]}}\n- Use case: {{$json[\"use_case\"]}}\n- Message: {{$json[\"message\"]}}\n\nReturn a JSON object in this exact shape:\n\n{\n  \"priority\": \"High\" | \"Medium\" | \"Low\",\n  \"summary\": \"Short 1-2 sentence summary of what they need\",\n  \"personalized_email\": \"A short, warm, professional reply email that: (1) acknowledges their context, (2) restates their needs, (3) suggests how we can help, (4) invites them to reply or book a call.\"\n}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -192
+      ],
+      "id": "e37caaf4-dde6-40f7-9432-8d25e7e5b830",
+      "name": "OpenAI - Analyze Lead",
+      "credentials": {
+        "openAiApi": {
+          "id": "YcfLoXgoj2Voauth",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const raw = item.json.output?.[0]?.content?.[0]?.text;\n  let parsed;\n\n  try {\n    parsed = JSON.parse(raw);\n  } catch {\n    parsed = {\n      priority: \"Medium\",\n      summary: \"Parsing failed.\",\n      personalized_email: \"Hi, thank you for reaching out...\"\n    };\n  }\n\n  return {\n    json: {\n      priority: parsed.priority,\n      summary: parsed.summary,\n      personalized_email: parsed.personalized_email\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -192
+      ],
+      "id": "de8ba3d4-64ff-4b79-9068-4fffe5cb81d2",
+      "name": "Function - Parse OpenAI Response"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$node[\"Google Sheets - Get Lead\"].json[\"email\"]}}",
+        "subject": "Thank you for reaching out to us",
+        "message": "={{$json[\"personalized_email\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "82ba51e6-ab1a-4aeb-872c-948b6698b9dd",
+      "name": "Gmail - Send Reply",
+      "webhookId": "48ba63ac-0879-4724-a057-511a115e8f8c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aFzposG5GKYkAEeS",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets - Get Lead": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Analyze Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord - Notify Lead": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI - Analyze Lead": {
+      "main": [
+        [
+          {
+            "node": "Function - Parse OpenAI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Parse OpenAI Response": {
+      "main": [
+        [
+          {
+            "node": "Discord - Notify Lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail - Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0748f6bb-adbd-4058-8893-8e4b98219cc5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cc4393bbf3edecc5392820f0ca14b0916f6cca07fd2cc1df1a757569c1986f7c"
+  },
+  "id": "fdNUz2nHwiQNJDo7",
+  "tags": []
+}
